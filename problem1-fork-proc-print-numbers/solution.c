@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
@@ -34,11 +35,13 @@ int main(int argc, char *argv[]) {
             fflush(stdout);
             break;
         }
+
         pid_t pid = fork();
         if (pid == -1) {
             perror("fork");
             return 1;
         }
+
         if (pid > 0) {
             wait(NULL);
             break;
@@ -50,4 +53,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
