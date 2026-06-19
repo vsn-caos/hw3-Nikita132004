@@ -23,11 +23,87 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // TODO: создайте TCP-сокет (AF_INET, SOCK_STREAM),
-    //       заполните struct sockaddr_in с помощью inet_aton/inet_pton,
-    //       подключитесь через connect,
-    //       реализуйте цикл чтения/отправки/приёма/вывода чисел.
-    //       Порядок байт — Little Endian (на x86/x86_64 это нативный порядок).
+    const char *ip = argv[1];
+    int port = atoi(argv[2]);
+    if (port <= 0 || port > 65535) {
+        fprintf(stderr, "Invalid port: %s\n", argv[2]);
+        return 1;
+    }
 
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    struct sockaddr_in servaddr;
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons((unsigned short)port);
+    if (inet_pton(AF_INET, ip, &servaddr.sin_addr) != 1) {
+        fprintf(stderr, "Invalid IPv4 address: %s\n", ip);
+        close(sockfd);
+        return 1;
+    }
+
+    if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+        perror("connect");
+        close(sockfd);
+        return 1;
+    }
+
+    int x;
+    unsigned char out[4];
+    unsigned char inbuf[4];
+
+    while (1) {
+        if (scanf("%d", &x) != 1) {
+            break;
+        }
+
+        out[0] = (unsigned char)(x & 0xFF);
+        out[1] = (unsigned char)((x >> 8) & 0xFF);
+        out[2] = (unsigned char)((x >> 16) & 0xFF);
+        out[3] = (unsigned char)((x >> 24) & 0xFF);
+
+        ssize_t sent = 0;
+        while (sent < 4) {
+            ssize_t s = send(sockfd, out + sent, 4 - sent, 0);
+            if (s <= 0) {
+                if (s == 0) {
+                    close(sockfd);
+                    return 0;
+                } else {
+                    perror("send");
+                    close(sockfd);
+                    return 1;
+                }
+            }
+            sent += s;
+        }
+
+        ssize_t got = 0;
+        while (got < 4) {
+            ssize_t r = recv(sockfd, inbuf + got, 4 - got, 0);
+            if (r <= 0) {
+                if (r == 0) {
+                    close(sockfd);
+                    return 0;
+                } else {
+                    perror("recv");
+                    close(sockfd);
+                    return 1;
+                }
+            }
+            got += r;
+        }
+
+        int resp = (inbuf[0] | (inbuf[1] << 8) | (inbuf[2] << 16) | (inbuf[3] << 24));
+
+        printf("%d\n", resp);
+        fflush(stdout);
+    }
+
+    close(sockfd);
     return 0;
 }
