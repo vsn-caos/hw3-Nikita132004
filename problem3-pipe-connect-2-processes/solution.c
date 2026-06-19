@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
         }
         close(pipefd[0]);
         close(pipefd[1]);
-        // выполняем CMD2 через оболочку
         execl("/bin/sh", "sh", "-c", argv[2], (char*)NULL);
         perror("execl CMD2");
         _exit(1);
