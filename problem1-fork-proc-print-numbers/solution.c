@@ -22,14 +22,16 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "N must be > 0\n");
         return 1;
     }
-
     int i = 1;
+    setvbuf(stdout, NULL, _IONBF, 0);
     while (1) {
         if (i == 1) {
             printf("%d", i);
         } else {
             printf(" %d", i);
         }
+        fflush(stdout);
+
         if (i == n) {
             printf("\n");
             fflush(stdout);
